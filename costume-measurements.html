@@ -1,0 +1,516 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Costume Measurement Chart — Orlando Opera</title>
+<style>
+  :root {
+    --accent: #c0392b;
+    --accent-light: #e74c3c;
+    --bg: #f8f8f8;
+    --card: #ffffff;
+    --text: #222;
+    --muted: #666;
+    --border: #ddd;
+    --success: #27ae60;
+    --radius: 8px;
+  }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.5;
+    padding: 0 0 4rem 0;
+  }
+  header {
+    background: var(--card);
+    border-bottom: 3px solid var(--accent);
+    padding: 1rem 1.25rem;
+    text-align: center;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+  }
+  header h1 {
+    font-size: 1.15rem;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+  }
+  header .subtitle {
+    font-size: 0.8rem;
+    color: var(--muted);
+    margin-top: 0.15rem;
+  }
+  form { max-width: 600px; margin: 0 auto; padding: 0.75rem; }
+
+  /* Sections */
+  .section {
+    background: var(--card);
+    border-radius: var(--radius);
+    margin-bottom: 0.75rem;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+    overflow: hidden;
+  }
+  .section-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.85rem 1rem;
+    cursor: pointer;
+    user-select: none;
+    -webkit-user-select: none;
+    background: var(--card);
+    border: none;
+    width: 100%;
+    text-align: left;
+    font: inherit;
+    color: inherit;
+  }
+  .section-header:active { background: #f0f0f0; }
+  .section-header h2 {
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: var(--accent);
+  }
+  .section-header .chevron {
+    font-size: 1.1rem;
+    color: var(--muted);
+    transition: transform 0.2s;
+  }
+  .section.collapsed .chevron { transform: rotate(-90deg); }
+  .section.collapsed .section-body { display: none; }
+  .section-body { padding: 0 1rem 1rem 1rem; }
+
+  /* Field grid */
+  .field-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.6rem;
+    margin-bottom: 0.6rem;
+  }
+  .field-row.single { grid-template-columns: 1fr; }
+  .field-row.triple { grid-template-columns: 1fr 1fr 1fr; }
+  .field-group { display: flex; flex-direction: column; }
+  .field-group label {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--muted);
+    margin-bottom: 0.2rem;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+  }
+  .field-group input,
+  .field-group select,
+  .field-group textarea {
+    font-size: 16px; /* prevents iOS zoom */
+    padding: 0.55rem 0.65rem;
+    border: 1.5px solid var(--border);
+    border-radius: 6px;
+    background: #fff;
+    color: var(--text);
+    transition: border-color 0.15s;
+    width: 100%;
+  }
+  .field-group input:focus,
+  .field-group select:focus,
+  .field-group textarea:focus {
+    outline: none;
+    border-color: var(--accent);
+    box-shadow: 0 0 0 2px rgba(192,57,43,0.12);
+  }
+  .field-group textarea { resize: vertical; min-height: 80px; }
+
+  /* Measurement row — label + code letter */
+  .meas-label { display: flex; align-items: baseline; gap: 0.35rem; }
+  .meas-label .code {
+    font-size: 0.65rem;
+    font-weight: 700;
+    color: var(--accent);
+    min-width: 2.2em;
+    flex-shrink: 0;
+  }
+
+  /* Composite field for "Fullest Hips ... at __ below waist" */
+  .composite {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    align-items: end;
+    gap: 0.4rem;
+  }
+  .composite .join-text {
+    font-size: 0.72rem;
+    color: var(--muted);
+    padding-bottom: 0.65rem;
+    white-space: nowrap;
+  }
+
+  /* Submit */
+  .submit-area { padding: 0.5rem 0; }
+  button[type="submit"] {
+    width: 100%;
+    padding: 0.9rem;
+    font-size: 1.05rem;
+    font-weight: 700;
+    color: #fff;
+    background: var(--accent);
+    border: none;
+    border-radius: var(--radius);
+    cursor: pointer;
+    transition: background 0.15s;
+  }
+  button[type="submit"]:active { background: var(--accent-light); }
+  button[type="submit"]:disabled {
+    background: #999;
+    cursor: not-allowed;
+  }
+
+  /* Status banner */
+  .status {
+    text-align: center;
+    padding: 0.75rem;
+    border-radius: var(--radius);
+    margin-bottom: 0.75rem;
+    font-weight: 600;
+    font-size: 0.9rem;
+    display: none;
+  }
+  .status.success { display: block; background: #d4edda; color: #155724; }
+  .status.error   { display: block; background: #f8d7da; color: #721c24; }
+  .status.sending  { display: block; background: #fff3cd; color: #856404; }
+
+  /* Responsive */
+  @media (max-width: 400px) {
+    .field-row.triple { grid-template-columns: 1fr 1fr; }
+    form { padding: 0.5rem; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Costume Measurement Chart</h1>
+  <div class="subtitle">Orlando Opera — The Merry Widow</div>
+</header>
+
+<form id="measurementForm" autocomplete="off">
+
+  <div id="statusBanner" class="status"></div>
+
+  <!-- ===== PERFORMER INFO ===== -->
+  <div class="section" id="sec-performer">
+    <button type="button" class="section-header" onclick="toggleSection('sec-performer')">
+      <h2>Performer Info</h2>
+      <span class="chevron">▼</span>
+    </button>
+    <div class="section-body">
+      <div class="field-row">
+        <div class="field-group">
+          <label for="lastName">Last Name</label>
+          <input type="text" id="lastName" name="lastName" required autocapitalize="words">
+        </div>
+        <div class="field-group">
+          <label for="firstName">First Name</label>
+          <input type="text" id="firstName" name="firstName" required autocapitalize="words">
+        </div>
+      </div>
+      <div class="field-row single">
+        <div class="field-group">
+          <label for="gender">Gender</label>
+          <select id="gender" name="gender">
+            <option value="">— Select —</option>
+            <option value="Female">Female</option>
+            <option value="Male">Male</option>
+          </select>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== SIZING ===== -->
+  <div class="section" id="sec-sizing">
+    <button type="button" class="section-header" onclick="toggleSection('sec-sizing')">
+      <h2>General Sizing</h2>
+      <span class="chevron">▼</span>
+    </button>
+    <div class="section-body">
+      <div class="field-row triple">
+        <div class="field-group">
+          <label for="height">Height</label>
+          <input type="text" id="height" name="height" inputmode="text">
+        </div>
+        <div class="field-group">
+          <label for="weight">Weight</label>
+          <input type="text" id="weight" name="weight" inputmode="numeric">
+        </div>
+        <div class="field-group">
+          <label for="shoeSize">Shoe Size</label>
+          <input type="text" id="shoeSize" name="shoeSize" inputmode="text">
+        </div>
+      </div>
+      <div class="field-row triple">
+        <div class="field-group">
+          <label for="suitDress">Suit / Dress</label>
+          <input type="text" id="suitDress" name="suitDress">
+        </div>
+        <div class="field-group">
+          <label for="shirt">Shirt</label>
+          <input type="text" id="shirt" name="shirt">
+        </div>
+        <div class="field-group">
+          <label for="trouser">Trouser</label>
+          <input type="text" id="trouser" name="trouser">
+        </div>
+      </div>
+      <div class="field-row triple">
+        <div class="field-group">
+          <label for="bra">Bra</label>
+          <input type="text" id="bra" name="bra">
+        </div>
+        <div class="field-group">
+          <label for="hat">Hat</label>
+          <input type="text" id="hat" name="hat">
+        </div>
+        <div class="field-group">
+          <label for="allergies">Allergies</label>
+          <input type="text" id="allergies" name="allergies">
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== BODY MEASUREMENTS ===== -->
+  <div class="section" id="sec-body">
+    <button type="button" class="section-header" onclick="toggleSection('sec-body')">
+      <h2>Body Measurements (inches)</h2>
+      <span class="chevron">▼</span>
+    </button>
+    <div class="section-body">
+
+      <div class="field-row">
+        <div class="field-group">
+          <label><span class="meas-label"><span class="code">A</span> Head Circumference</span></label>
+          <input type="text" name="headCircumference" inputmode="decimal">
+        </div>
+        <div class="field-group">
+          <label><span class="meas-label"><span class="code">B</span> Base of Neck</span></label>
+          <input type="text" name="baseOfNeck" inputmode="decimal">
+        </div>
+      </div>
+
+      <div class="field-row">
+        <div class="field-group">
+          <label><span class="meas-label"><span class="code">C</span> Full Chest</span></label>
+          <input type="text" name="fullChest" inputmode="decimal">
+        </div>
+        <div class="field-group">
+          <label><span class="meas-label"><span class="code"></span> Ribcage / Underbust</span></label>
+          <input type="text" name="ribcageUnderbust" inputmode="decimal">
+        </div>
+      </div>
+
+      <div class="field-row">
+        <div class="field-group">
+          <label><span class="meas-label"><span class="code">D</span> Waist</span></label>
+          <input type="text" name="waist" inputmode="decimal">
+        </div>
+        <div class="field-group">
+          <label><span class="meas-label"><span class="code"></span> High Hips</span></label>
+          <input type="text" name="highHips" inputmode="decimal">
+        </div>
+      </div>
+
+      <!-- Fullest Hips — composite field -->
+      <div class="field-row single">
+        <div class="field-group">
+          <label><span class="meas-label"><span class="code">E</span> Fullest Hips / Low Hip</span></label>
+          <div class="composite">
+            <input type="text" name="fullestHips" inputmode="decimal" placeholder="measurement">
+            <span class="join-text">at</span>
+            <input type="text" name="fullestHipsBelowWaist" inputmode="decimal" placeholder='″ below waist'>
+          </div>
+        </div>
+      </div>
+
+      <div class="field-row">
+        <div class="field-group">
+          <label><span class="meas-label"><span class="code">F–Z</span> Inseam</span></label>
+          <input type="text" name="inseam" inputmode="decimal">
+        </div>
+        <div class="field-group">
+          <label><span class="meas-label"><span class="code">G–H</span> Outseam to Below Knee</span></label>
+          <input type="text" name="outseamBelowKnee" inputmode="decimal">
+        </div>
+      </div>
+
+      <div class="field-row">
+        <div class="field-group">
+          <label><span class="meas-label"><span class="code">G–Z</span> Outseam to Floor</span></label>
+          <input type="text" name="outseamFloor" inputmode="decimal">
+        </div>
+        <div class="field-group">
+          <label><span class="meas-label"><span class="code"></span> Biceps</span></label>
+          <input type="text" name="biceps" inputmode="decimal">
+        </div>
+      </div>
+
+      <div class="field-row">
+        <div class="field-group">
+          <label><span class="meas-label"><span class="code"></span> Thigh</span></label>
+          <input type="text" name="thigh" inputmode="decimal">
+        </div>
+        <div class="field-group">
+          <label><span class="meas-label"><span class="code"></span> Below Knee</span></label>
+          <input type="text" name="belowKnee" inputmode="decimal">
+        </div>
+      </div>
+
+      <div class="field-row">
+        <div class="field-group">
+          <label><span class="meas-label"><span class="code">J–K</span> CB Nape to Shoulder</span></label>
+          <input type="text" name="cbNapeToShoulder" inputmode="decimal">
+        </div>
+        <div class="field-group">
+          <label><span class="meas-label"><span class="code">K–L–M</span> Shoulder to Wrist</span></label>
+          <input type="text" name="shoulderToWrist" inputmode="decimal">
+        </div>
+      </div>
+
+      <div class="field-row">
+        <div class="field-group">
+          <label><span class="meas-label"><span class="code">Q–R</span> Shoulder to Shoulder Front</span></label>
+          <input type="text" name="shoulderFront" inputmode="decimal">
+        </div>
+        <div class="field-group">
+          <label><span class="meas-label"><span class="code">S–K</span> Shoulder to Shoulder Back</span></label>
+          <input type="text" name="shoulderBack" inputmode="decimal">
+        </div>
+      </div>
+
+      <div class="field-row">
+        <div class="field-group">
+          <label><span class="meas-label"><span class="code">O–P</span> Front Nape to Waist</span></label>
+          <input type="text" name="frontNapeToWaist" inputmode="decimal">
+        </div>
+        <div class="field-group">
+          <label><span class="meas-label"><span class="code">O–Z</span> Front Nape to Floor</span></label>
+          <input type="text" name="frontNapeToFloor" inputmode="decimal">
+        </div>
+      </div>
+
+      <div class="field-row">
+        <div class="field-group">
+          <label><span class="meas-label"><span class="code">J–N</span> Back Nape to Waist</span></label>
+          <input type="text" name="backNapeToWaist" inputmode="decimal">
+        </div>
+        <div class="field-group">
+          <label><span class="meas-label"><span class="code">J–Z</span> Back Nape to Floor</span></label>
+          <input type="text" name="backNapeToFloor" inputmode="decimal">
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ===== NOTES ===== -->
+  <div class="section" id="sec-notes">
+    <button type="button" class="section-header" onclick="toggleSection('sec-notes')">
+      <h2>Notes</h2>
+      <span class="chevron">▼</span>
+    </button>
+    <div class="section-body">
+      <div class="field-row single">
+        <div class="field-group">
+          <label for="notes">Notes</label>
+          <textarea id="notes" name="notes" rows="3"></textarea>
+        </div>
+      </div>
+      <div class="field-row single">
+        <div class="field-group">
+          <label for="measuredBy">Measurements Taken By</label>
+          <input type="text" id="measuredBy" name="measuredBy" autocapitalize="words">
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== SUBMIT ===== -->
+  <div class="submit-area">
+    <button type="submit" id="submitBtn">Submit Measurements</button>
+  </div>
+
+</form>
+
+<script>
+// ============================================================
+// CONFIGURATION — paste your deployed Apps Script URL here
+// ============================================================
+const SCRIPT_URL = 'YOUR_APPS_SCRIPT_URL_HERE';
+
+// Toggle collapsible sections
+function toggleSection(id) {
+  document.getElementById(id).classList.toggle('collapsed');
+}
+
+// Gather all form data into an object
+function gatherFormData() {
+  const form = document.getElementById('measurementForm');
+  const data = {};
+  for (const el of form.elements) {
+    if (el.name) data[el.name] = el.value.trim();
+  }
+  return data;
+}
+
+// Show status banner
+function showStatus(type, message) {
+  const banner = document.getElementById('statusBanner');
+  banner.className = 'status ' + type;
+  banner.textContent = message;
+  banner.scrollIntoView({ behavior: 'smooth', block: 'center' });
+}
+
+// Form submission
+document.getElementById('measurementForm').addEventListener('submit', async function(e) {
+  e.preventDefault();
+  const btn = document.getElementById('submitBtn');
+  const data = gatherFormData();
+
+  // Basic validation
+  if (!data.lastName || !data.firstName) {
+    showStatus('error', 'Please enter performer first and last name.');
+    return;
+  }
+
+  if (SCRIPT_URL === 'YOUR_APPS_SCRIPT_URL_HERE') {
+    showStatus('error', 'Setup required: paste your Google Apps Script URL into the SCRIPT_URL variable in the HTML file.');
+    return;
+  }
+
+  btn.disabled = true;
+  btn.textContent = 'Sending…';
+  showStatus('sending', 'Submitting measurements…');
+
+  try {
+    const response = await fetch(SCRIPT_URL, {
+      method: 'POST',
+      mode: 'no-cors',          // Apps Script doesn't send CORS headers on POST
+      headers: { 'Content-Type': 'text/plain' },
+      body: JSON.stringify(data)
+    });
+    // With no-cors we can't read the response, but if fetch didn't throw, it sent.
+    showStatus('success', '✓ Measurements submitted successfully!');
+    document.getElementById('measurementForm').reset();
+  } catch (err) {
+    showStatus('error', 'Submission failed — check your connection and try again.');
+    console.error(err);
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Submit Measurements';
+  }
+});
+</script>
+</body>
+</html>
